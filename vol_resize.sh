@@ -36,7 +36,7 @@ log(){
 }
 die(){
     local error_message="$@"
-    log FATAL "$error_message" Stack trace:
+    log FATAL "$error_message Stack trace:"
     usage
     exit 1
 }

@@ -123,7 +123,6 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
 
     # Check if the device is a MD device (Software RAID), then resize it. Go down in recursion if needed.
     log DEBUG "Check if \"$block_device\" aka \"$real_block_device\" device is a MD device and resize it."
-    # /sys/block/md1/md/level
     if grep -q raid /sys/block/$(basename $real_block_device)/md/level >/dev/null 2>&1;then
         log DEBUG "\"$block_device\" is a MD device"
         for maj_min in $(cat /sys/block/$(basename $real_block_device)/md/rd*/block/dev);do

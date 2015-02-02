@@ -121,7 +121,25 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
         done
     fi
 
-    # TODO: Check if the device is a MD device (Software RAID), then resize it. Go down in recursion if needed.
+    # Check if the device is a MD device (Software RAID), then resize it. Go down in recursion if needed.
+    log DEBUG "Check if \"$block_device\" aka \"$real_block_device\" device is a MD device and resize it."
+    # /sys/block/md1/md/level
+    if grep -q raid /sys/block/$(basename $real_block_device)/md/level >/dev/null 2>&1;then
+        log DEBUG "\"$block_device\" is a MD device"
+        for maj_min in $(cat /sys/block/$(basename $real_block_device)/md/rd*/block/dev);do
+            log DEBUG maj_min=$maj_min
+            major=${maj_min/:*/}
+            minor=${maj_min/*:/}
+            if devmap_name $maj_min >/dev/null;then
+                log DEBUG going deeper.
+                expand_block_device /dev/mapper/$(devmap_name $maj_min)
+            else
+                expand_block_device $(find /dev -type b|xargs ls -l|sed -rn "/ $major, +$minor/s/.* \/dev/\/dev/p")
+            fi
+        done
+        return $?
+    fi
+
 
     log DEBUG "Check if \"$block_device\" aka \"$real_block_device\" device is a SCSI device and rescan it."
     if [ "$(readlink -f /sys/block/$(basename $real_block_device)/device/driver)" = "/sys/bus/scsi/drivers/sd" ];then

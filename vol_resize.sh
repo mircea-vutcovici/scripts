@@ -198,7 +198,7 @@ update_disklabel(){
     log DEBUG "Check if \"$block_device\" device is part of a DM multipath and exit."
     # You can test this also with: multipath -c /dev/sdi
     if dmsetup table| grep -q " multipath .*$(majmin_device $block_device)";then
-        log DEBUG Device \"$block_device\" is member of a DM multipath. The disk label will be expanded via the DM multipath block device, not from members.
+        log DEBUG "Device \"$block_device\" is member of a DM multipath. The disk label will be expanded via the DM multipath block device, not from members."
         return 1
     fi
 

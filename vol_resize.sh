@@ -1,6 +1,6 @@
 #! /bin/bash
 
-# Author: Mircea Vutcovici 2014
+# Author: Mircea Vutcovici, 2014
 
 # {{{ Initialization
 DEBUG=0
@@ -43,10 +43,10 @@ die(){
 run(){
     local shell_expression="$@"
     if [[ $DRY_RUN == "1" ]];then
-        log WARNING "Dry run. The execution of \""$shell_expression"\" has been skipped."
+        log WARNING "Dry run. The execution of \"$shell_expression\" has been skipped."
         return 0
     else
-        log DEBUG "Starting \""$shell_expression"\""
+        log DEBUG "Starting \"$shell_expression\""
         local pipefail_save=$(set +o |grep pipefail)  # save the current status of pipefail bash option.
         eval "set -o pipefail && $shell_expression"
         local error_code=$?
@@ -139,9 +139,10 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
         return $?
     fi
 
-
     log DEBUG "Check if \"$block_device\" aka \"$real_block_device\" device is a SCSI device and rescan it."
-    if [ "$(readlink -f /sys/block/$(basename $real_block_device)/device/driver)" = "/sys/bus/scsi/drivers/sd" ];then
+#TODO: Add check if the target can be scanned. Check that scsi_level is above ??? Search for SCSI SPC-3. E.g. multipath and ALUA is defiend in SPC-3. This is defined in /sys/block/*/device/scsi_level
+    if [ "$(readlink -f /sys/block/$(basename $real_block_device)/device/driver)" = "/sys/bus/scsi/drivers/sd" -o \
+          "$(readlink -f /sys/block/$(basename $real_block_device)/device/generic/driver)" = "/sys/bus/scsi/drivers/sd" ];then
         log DEBUG "\"$block_device\" is a SCSI device."
         rescan_block_device $block_device && update_disklabel $block_device
         return $?
@@ -197,7 +198,7 @@ update_disklabel(){
     log DEBUG "Check if \"$block_device\" device is part of a DM multipath and exit."
     # You can test this also with: multipath -c /dev/sdi
     if dmsetup table| grep -q " multipath .*$(majmin_device $block_device)";then
-        log DEBUG "Device \"$block_device\" is member of a DM multipath. The disk label will be expanded via the DM multipath block device, not from members."
+        log DEBUG Device \"$block_device\" is member of a DM multipath. The disk label will be expanded via the DM multipath block device, not from members.
         return 1
     fi
 
@@ -232,6 +233,13 @@ resize_fs(){  # Determine the filesystem and resize it
     local fs_type=$(blkid $fs_device|sed -r 's/.*TYPE="(.*)".*/\1/')
     local error_code=254
     log DEBUG "Resizing the file system on \"$fs_device\""
+    if [ x"$fs_type" == "x" ];then
+        log DEBUG "Getting the filesystem type from /proc/mounts"
+        # GFS can be expanded only if it is mounted
+        if egrep -q "^$fs_device [^ ]+ gfs " /proc/mounts ;then
+            fs_type=gfs
+        fi
+    fi
     case $fs_type in
         xfs)
                 echo xfs_growfs $fs_device
@@ -239,6 +247,15 @@ resize_fs(){  # Determine the filesystem and resize it
                 ;;
         ext*)
                 echo resize2fs $fs_device
+                error_code=$?
+                ;;
+        gfs)
+                if ! clustat -Q ;then
+                    die "Cluster is not quorate."
+                fi
+                log WARNING "Make sure you run the rescan on all RHEL cluster members"
+                echo gfs_grow -T $fs_device
+                echo gfs_grow $fs_device
                 error_code=$?
                 ;;
         *)

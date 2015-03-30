@@ -1,0 +1,1 @@
+for i in /sys/class/scsi_host/host*; do echo "- - -" > $i/scan; done; for i in /sys/bus/scsi/devices/*:*:*:*/rescan;do echo 1 > $i;done; for i in /sys/class/fc_host/host*/issue_lip;do echo 1 >$i;done;for i in /sys/block/sd*/device/rescan;do echo 1 > $i;done

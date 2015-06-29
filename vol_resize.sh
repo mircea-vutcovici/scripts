@@ -1,7 +1,5 @@
 #! /bin/bash
 
-# Author: Mircea Vutcovici, 2014
-
 # {{{ Initialization
 DEBUG=0
 DRY_RUN=0
@@ -312,7 +310,8 @@ if [ $DEBUG == 1 ];then
     #devmap_name 252 0
     #udevadm info -an /dev/sda
     #udevadm info --export-db
-    #file -s /dev/sdaa
+    #file -s /dev/sdaa # Returns UUID
+    #sg_inq --id /dev/sdaa|sed -rn 's/.*[[]0x([0-9a-f]{32})[]].*/\1/p'  # Returns WWID used to group devices in a DM Multipath
 fi
 
 expand_block_device $block_device_to_expand #|| die Could not expand \"$block_device_to_expand\" block device.

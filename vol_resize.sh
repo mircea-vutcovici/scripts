@@ -151,6 +151,7 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
     log DEBUG "Check if \"$block_device\" is a MS-DOS partition."
     if [[ $(cat /sys/class/block/$(basename $block_device)/partition 2>/dev/null) -ge 1 ]];then
         log ERROR "The block device \"$block_device\" is an MS-DOS partition. Which is not supported yet. You have to expand it manually."
+        # TODO: use parted to delete/recreate the partition, then partprobe or kpartx to ask kernel to rescan the partition table
         # resize_partition $block_device && update_disklabel $block_device
         return 1
     fi

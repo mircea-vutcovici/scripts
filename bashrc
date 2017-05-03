@@ -1,4 +1,4 @@
-# record terminal sessions
+# record terminal sessions. Usage example: script mysql-instalation-recording
 script(){
     # Use first parameter as file suffix, or $USER if there are no params
     local name_suffix=${1:-$USER}

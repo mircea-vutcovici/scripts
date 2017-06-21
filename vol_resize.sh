@@ -179,6 +179,13 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
         return $?
     fi
 
+    log DEBUG "Check if \"$block_device\" aka \"$real_block_device\" device is DM crypt."
+    if dmsetup table|grep -q $(basename $block_device).*crypt; then
+        log DEBUG "The \"$real_block_device\" device aka \"$block_device\" is a DM crypt volume."
+        expand_crypt_device $block_device && update_disklabel $block_device
+        return $?
+    fi
+
     log DEBUG "Check if \"$block_device\" aka \"$real_block_device\" device is LVM2 logical volume."
     if lvs -o lv_name --noheadings $block_device >/dev/null 2>&1;then
         log DEBUG "The \"$real_block_device\" device aka \"$block_device\" is a LVM logical volume."
@@ -272,6 +279,18 @@ expand_mp_device(){
     local mp_device=$1
     log DEBUG "Expanding multipath volume \"$mp_device\"."
     echo "multipathd -k\"resize map $(basename $mp_device)\"   # Expan DM Multipath (MPIO) device"
+    return $?
+}
+expand_crypt_device(){
+    local crypt_device=$1
+    local crypt_device_parent=/dev/$(lsblk --inverse --list --noheadings --output=name $crypt_device|sed -n '2p')
+    log DEBUG "Check if $crypt_device_parent, parent of $crypt_device device, is a LUKS device."
+    if cryptsetup isLuks $crypt_device_parent;then
+        log DEBUG "The \"$crypt_device_parent\" device contains a LUKS encrypted volume."
+        echo "cryptsetup resize  $crypt_device_parent  # Resize LUKS encrypted volume $crypt_device"
+    else
+        log ERROR "Can not resize crypt device $crypt_device. It is not a LUKS volume."
+    fi
     return $?
 }
 resize_fs(){  # Determine the filesystem and resize it

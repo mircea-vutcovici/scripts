@@ -117,6 +117,7 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
     if [ -L $block_device ];then
         real_block_device=$(readlink -f $block_device)
     fi
+    # Check if the block device is a DM (device mapper) volume, then expand first underlying devices.
     log DEBUG "Expanding $block_device --> $real_block_device. Command: \"dmsetup deps $real_block_device\" returns \"$(dmsetup deps $real_block_device 2>&1)\""
     if dmsetup deps $real_block_device >/dev/null 2>&1;then # The file is a DM device, we go deep into recursion.
         for maj_min in $(dmsetup deps $real_block_device|sed -r 's/^[^(]+\(//;s/(\) \()/ /g;s/\)$//;s/, /:/g');do
@@ -136,7 +137,7 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
     log DEBUG "Check if \"$block_device\" aka \"$real_block_device\" device is a MD device and resize it."
     if grep -q raid /sys/block/$(basename $real_block_device)/md/level >/dev/null 2>&1;then
         log DEBUG "\"$block_device\" is a MD device"
-        for maj_min in $(cat /sys/block/$(basename $real_block_device)/md/rd*/block/dev);do
+        for maj_min in $(< /sys/block/$(basename $real_block_device)/md/rd*/block/dev);do
             log DEBUG maj_min=$maj_min
             major=${maj_min/:*/}
             minor=${maj_min/*:/}
@@ -187,13 +188,14 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
 rescan_block_device(){
     local block_device=$1   # Full path to the device name
     local block_device_short=$(basename $block_device)
+    # SCSI IDENTIFY_DRIVE
     local block_device_rescan_file=$(readlink -f /sys/block/$block_device_short/device/rescan)
     log DEBUG "Rescan file: $block_device --> $block_device_rescan_file"
     if [ "x$block_device_rescan_file" == "x" ];then
         log ERROR "Block device \"$block_device\" can not be scanned. It must be resized manually."
         return 1
     fi
-    echo "echo 1 > $block_device_rescan_file"
+    echo "echo 1 > $block_device_rescan_file   # Send SCSI IDENTIFY_DRIVE command to obtain the new size"
     return 0
 }
 
@@ -211,6 +213,7 @@ update_disklabel(){
     # You can test this also with: multipath -c /dev/sdi
     if dmsetup table| grep -q " multipath .*$(majmin_device $block_device)";then
         log DEBUG "Device \"$block_device\" is member of a DM multipath. The disk label will be expanded via the DM multipath block device, not from members."
+        # We return here even if there is no change to skip LVM expand.
         return 1
     fi
 
@@ -225,19 +228,19 @@ update_disklabel(){
 }
 expand_lvm2_lv(){
     local lv_device=$1
-    echo lvextend -l +90%FREE $lv_device
+    echo "lvextend -l +90%FREE $lv_device  # Extend the logical volume to 90% of free space in volume group."
     return $?
 }
 expand_lvm2_pv(){
     local pv_device=$1
     log DEBUG "Expanding physical volume \"$pv_device\"."
-    echo pvresize $pv_device
+    echo "pvresize $pv_device   # Expand LVM physical volume $pv_device"
     return $?
 }
 expand_mp_device(){
     local mp_device=$1
     log DEBUG "Expanding multipath volume \"$mp_device\"."
-    echo multipathd -k\"resize map $(basename $mp_device)\"
+    echo "multipathd -k\"resize map $(basename $mp_device)\"   # Expan DM Multipath (MPIO) device"
     return $?
 }
 resize_fs(){  # Determine the filesystem and resize it
@@ -254,11 +257,11 @@ resize_fs(){  # Determine the filesystem and resize it
     fi
     case $fs_type in
         xfs)
-                echo xfs_growfs $fs_device
+                echo "xfs_growfs $fs_device   # Resize XFS file system"
                 error_code=$?
                 ;;
         ext*)
-                echo resize2fs $fs_device
+                echo "resize2fs $fs_device    # Resize ext3 or ext4 filesystem"
                 error_code=$?
                 ;;
         gfs)

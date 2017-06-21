@@ -23,9 +23,22 @@ EOF
 log(){
     local log_message_level=$1 # DEBUG, INFO, WARNING, ERROR, FATAL
     shift
-    local log_message="$@"
+    local log_message="$@"   # All remaining parameters
+    local log_color=""
+    local log_color_reset=""
     if [[ $DEBUG == "1" || $log_message_level != "DEBUG" ]];then
-        echo $(date +%F\ %T) $log_message_level: "$log_message" >&2
+        if [ -t 1 -a -t 2 ] ; then  # STDOUT is a terminal
+            case $log_message_level in
+                DEBUG)  log_color="\e[1;34m" ;; # light blue
+                INFO)   log_color="\e[1;32m" ;;  # light green
+                WARNING)log_color="\e[33m" ;; # yellow
+                ERROR)  log_color="\e[1;31m" ;; # light red
+                FATAL)  log_color="\e[31m" ;; # red
+                *)      log_color="\e[5;31m";; # blinking red
+            esac
+            log_color_reset="\e[0m"
+        fi
+        echo -e $(date +%F\ %T) $log_color$log_message_level$log_color_reset: "$log_message"
     fi
     case $log_message_level in
         ERROR|FATAL) ERRORS_FOUND=1 # We will send an email with the log in the exit_trap function.

@@ -151,6 +151,15 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
         return $?
     fi
 
+    # Check if the block device is a MS-DOS partition, then expand first underlying devices.
+    log DEBUG "Check if \"$block_device\" is a MS-DOS partition."
+    if [[ $(< /sys/class/block/$(basename $block_device)/partition) -ge 1 ]] 2>/dev/null;then
+        log DEBUG "The block device \"$block_device\" is an MS-DOS partition."
+        local msdos_disk_device=/dev/$(basename $(dirname $(readlink -f /sys/class/block/$(basename $block_device))))
+        expand_msdos_partition $block_device && update_disklabel $block_device
+        return $?
+    fi
+
     log DEBUG "Check if \"$block_device\" aka \"$real_block_device\" device is a SCSI device and rescan it."
 #TODO: Add check if the target can be scanned. Check that scsi_level is above ??? Search for SCSI SPC-3. E.g. multipath and ALUA is defiend in SPC-3. This is defined in /sys/block/*/device/scsi_level
     if [ "$(readlink -f /sys/block/$(basename $real_block_device)/device/driver)" = "/sys/bus/scsi/drivers/sd" -o \
@@ -161,14 +170,7 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
     fi
 
     # TODO: detect UEFI partitions
-
-    log DEBUG "Check if \"$block_device\" is a MS-DOS partition."
-    if [[ $(cat /sys/class/block/$(basename $block_device)/partition 2>/dev/null) -ge 1 ]];then
-        log ERROR "The block device \"$block_device\" is an MS-DOS partition. Which is not supported yet. You have to expand it manually."
-        # TODO: use parted to delete/recreate the partition, then partprobe or kpartx to ask kernel to rescan the partition table
-        # resize_partition $block_device && update_disklabel $block_device
-        return 1
-    fi
+    # expand_gpt_partition $block_device && update_disklabel $block_device
 
     log DEBUG "Check if \"$block_device\" aka \"$real_block_device\" device is DM multipath."
     if dmsetup table|grep -q $(basename $block_device).*multipath; then
@@ -225,6 +227,35 @@ update_disklabel(){
     fi
     log DEBUG "Could not determine the disk label for \"$block_device\"."
     return 0
+}
+
+expand_gpt_partition(){
+    log ERROR "UEFI GPT disk label is not supported. Expand it manually."
+    exit 1
+}
+expand_msdos_partition(){
+    local msdos_part_device=$1
+    if [[ $(< /sys/class/block/$(basename $msdos_part_device)/partition) -ge 1 ]] 2>/dev/null;then
+    log DEBUG "The block device $msdos_part_device is partition $(< /sys/class/block/$(basename $msdos_part_device)/partition )."
+    else
+        die "The block device $msdos_part_device is not a MS-DOS partition"
+    fi
+    # Find the main block device where this partion is member
+    local msdos_disk_device=/dev/$(basename $(dirname $(readlink -f /sys/class/block/$(basename $msdos_part_device))))
+    log DEBUG "Backup partition table for device $msdos_part_device"
+    local msdos_part_table_backup_name=dev_$(basename $msdos_disk_device)-'partition-table-$(date +%F_%H%M%S).txt'
+    echo "sfdisk -d $msdos_disk_device > $msdos_part_table_backup_name   # Backup MS-DOS partition table for $msdos_disk_device block device."
+    # TODO: use parted to delete/recreate the partition, then partprobe or kpartx to ask kernel to rescan the partition table
+
+    #die MS-DOS partition resize not implemented
+    local msdos_part_number=$(< /sys/class/block/$(basename $msdos_part_device)/partition)
+    echo "parted -s $msdos_disk_device resizepart $msdos_part_number   # Resize MS-DOS partition $msdos_part_device"
+    echo "# Update kernel with new partition table from disk"
+    echo partprobe $msdos_disk_device
+    echo blockdev --rereadpt $msdos_disk_device
+    echo partx -u $msdos_disk_device
+    echo kpartx -u $msdos_disk_device
+    return $?
 }
 expand_lvm2_lv(){
     local lv_device=$1
@@ -333,3 +364,4 @@ fi
 
 expand_block_device $block_device_to_expand #|| die Could not expand \"$block_device_to_expand\" block device.
 resize_fs $block_device_to_expand
+# vim:ts=4:sts=4:et:sw=4

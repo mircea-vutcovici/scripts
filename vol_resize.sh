@@ -128,6 +128,7 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
                 log DEBUG "going deeper."
                 expand_block_device /dev/mapper/$(devmap_name $maj_min)
             else
+                log DEBUG "going deeper."
                 expand_block_device $(find /dev -type b|xargs ls -l|sed -rn "/ $major, +$minor /s/.* \/dev/\/dev/p")
             fi
         done
@@ -142,9 +143,10 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
             major=${maj_min/:*/}
             minor=${maj_min/*:/}
             if devmap_name $maj_min >/dev/null;then
-                log DEBUG going deeper.
+                log DEBUG "going deeper."
                 expand_block_device /dev/mapper/$(devmap_name $maj_min)
             else
+                log DEBUG "going deeper."
                 expand_block_device $(find /dev -type b|xargs ls -l|sed -rn "/ $major, +$minor /s/.* \/dev/\/dev/p")
             fi
         done
@@ -254,6 +256,7 @@ expand_msdos_partition(){
     echo "sfdisk -d $msdos_disk_device > $msdos_part_table_backup_name   # Backup MS-DOS partition table for $msdos_disk_device block device."
     # TODO: use parted to delete/recreate the partition, then partprobe or kpartx to ask kernel to rescan the partition table
 
+    log DEBUG "going deeper."
     expand_block_device $msdos_disk_device
     local msdos_part_number=$(< /sys/class/block/$(basename $msdos_part_device)/partition)
     echo "parted -s $msdos_disk_device resizepart $msdos_part_number   # Resize MS-DOS partition $msdos_part_device"

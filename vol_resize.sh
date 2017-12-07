@@ -326,6 +326,12 @@ resize_fs(){  # Determine the filesystem and resize it
                 echo gfs_grow $fs_device
                 error_code=$?
                 ;;
+        swap)
+                echo "swapoff $fs_device    # Disable swap device. Make sure you have enough free memory to accomodate the data from this swap device."
+                echo "mkswap $fs_device    # set the swap area"
+                echo "swapon $fs_device    # Enable swap device."
+                ;;
+
         *)
             log ERROR "File system \"$fs_type\" from device \"$fs_device\" is not supported."
                 ;;

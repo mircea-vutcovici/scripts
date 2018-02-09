@@ -15,7 +15,7 @@ HISTCONTROL=erasedups
 
 
 # record terminal sessions. Usage example: script mysql-instalation-recording
-script(){
+script_record(){
     # Use first parameter as file suffix, or $USER if there are no params
     local name_suffix=${1:-$USER}
     local script_dir=$HOME/script

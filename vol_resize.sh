@@ -254,17 +254,15 @@ expand_msdos_partition(){
     log DEBUG "Backup partition table for device $msdos_part_device"
     local msdos_part_table_backup_name=dev_$(basename $msdos_disk_device)-'partition-table-$(date +%F_%H%M%S).txt'
     echo "sfdisk -d $msdos_disk_device > $msdos_part_table_backup_name   # Backup MS-DOS partition table for $msdos_disk_device block device."
-    # TODO: use parted to delete/recreate the partition, then partprobe or kpartx to ask kernel to rescan the partition table
-
     log DEBUG "going deeper."
     expand_block_device $msdos_disk_device
     local msdos_part_number=$(< /sys/class/block/$(basename $msdos_part_device)/partition)
     echo "parted -s $msdos_disk_device resizepart $msdos_part_number   # Resize MS-DOS partition $msdos_part_device"
     echo "# Update kernel with new partition table from disk"
-    echo partprobe $msdos_disk_device
-    echo blockdev --rereadpt $msdos_disk_device
-    echo partx -u $msdos_disk_device
-    echo kpartx -u $msdos_disk_device
+    echo "partx -u $gpt_disk_device"
+    echo "partprobe $gpt_disk_device"
+    echo "blockdev --rereadpt $gpt_disk_device"
+    echo "kpartx -u $gpt_disk_device"
     return $?
 }
 expand_lvm2_lv(){

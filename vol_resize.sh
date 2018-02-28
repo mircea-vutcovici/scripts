@@ -243,8 +243,20 @@ update_disklabel(){
 }
 
 expand_gpt_partition(){
-    log ERROR "UEFI GPT disk label is not supported. Expand it manually."
-    exit 1
+    local gpt_part_device=$1
+    local gpt_disk_device=/dev/$(basename $(dirname $(readlink -f /sys/class/block/$(basename $gpt_part_device))))
+    local gpt_part_table_backup_name=dev_$(basename $gpt_disk_device)-'partition-table-$(date +%F_%H%M%S).txt'
+    echo "sgdisk --backup=$gpt_part_table_backup_name $gpt_disk_device # Backup UEFI GPT partition table"
+    log DEBUG "going deeper."
+    expand_block_device $gpt_disk_device
+    local gpt_part_number=$(< /sys/class/block/$(basename $gpt_part_device)/partition)
+    echo "parted -s $gpt_disk_device resizepart $gpt_part_number   # Resize GPT partition $gpt_part_device"
+    echo "# Update kernel with new partition table from disk"
+    echo "partx -u $gpt_disk_device"
+    echo "partprobe $gpt_disk_device"
+    echo "blockdev --rereadpt $gpt_disk_device"
+    echo "kpartx -u $gpt_disk_device"
+    return $?
 }
 expand_msdos_partition(){
     local msdos_part_device=$1

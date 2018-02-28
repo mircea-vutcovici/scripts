@@ -153,12 +153,19 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
         return $?
     fi
 
-    # Check if the block device is a MS-DOS partition, then expand first underlying devices.
-    log DEBUG "Check if \"$block_device\" is a MS-DOS partition."
+    # Check if the block device is a MS-DOS or GPT partition, then expand first underlying devices.
+    log DEBUG "Check if \"$block_device\" is a MS-DOS or UEFI GPT partition."
     if [[ $(< /sys/class/block/$(basename $block_device)/partition) -ge 1 ]] 2>/dev/null;then
-        log DEBUG "The block device \"$block_device\" is an MS-DOS partition."
-        local msdos_disk_device=/dev/$(basename $(dirname $(readlink -f /sys/class/block/$(basename $block_device))))
-        expand_msdos_partition $block_device && update_disklabel $block_device
+        log DEBUG "The block device \"$block_device\" is a MS-DOS or UEFI GPT partition."
+    log DEBUG "Check if \"$block_device\" is an UEFI GPT partition."
+        local disk_device=/dev/$(basename $(dirname $(readlink -f /sys/class/block/$(basename $block_device))))
+        if dd if=$disk_device bs=512 count=1 skip=1 2>/dev/null|grep -q "^EFI PART";then
+            log DEBUG "The block device \"$block_device\" is an UEFI GPT partition."
+            expand_gpt_partition $block_device && update_disklabel $block_device
+        else
+            log DEBUG "The block device \"$block_device\" is a MS-DOS partition."
+            expand_msdos_partition $block_device && update_disklabel $block_device
+        fi
         return $?
     fi
 
@@ -170,9 +177,6 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
         rescan_block_device $block_device && update_disklabel $block_device
         return $?
     fi
-
-    # TODO: detect UEFI partitions
-    # expand_gpt_partition $block_device && update_disklabel $block_device
 
     log DEBUG "Check if \"$block_device\" aka \"$real_block_device\" device is DM multipath."
     if dmsetup table|grep -q $(basename $block_device).*multipath; then

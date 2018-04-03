@@ -360,6 +360,10 @@ if [  $# -lt 1 ];then
     die Invalid number of arguments. "\$#=$#"
 fi
 
+if [[ $(id -ru) != 0 ]];then
+    log WARNING "This script needs to run as root user."
+fi
+
 while [[ $# > 0 ]]; do
     argument=$1
     shift

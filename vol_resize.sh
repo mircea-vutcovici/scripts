@@ -275,10 +275,10 @@ expand_msdos_partition(){
     local msdos_part_number=$(< /sys/class/block/$(basename $msdos_part_device)/partition)
     echo "parted -s $msdos_disk_device resizepart $msdos_part_number   # Resize MS-DOS partition $msdos_part_device"
     echo "# Update kernel with new partition table from disk"
-    echo "partx -u $gpt_disk_device"
-    echo "partprobe $gpt_disk_device"
-    echo "blockdev --rereadpt $gpt_disk_device"
-    echo "kpartx -u $gpt_disk_device"
+    echo "partx -u $msdos_disk_device"
+    echo "partprobe $msdos_disk_device"
+    echo "blockdev --rereadpt $msdos_disk_device"
+    echo "kpartx -u $msdos_disk_device"
     return $?
 }
 expand_lvm2_lv(){

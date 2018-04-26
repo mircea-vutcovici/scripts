@@ -170,7 +170,7 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
     fi
 
     log DEBUG "Check if \"$block_device\" aka \"$real_block_device\" device is a SCSI device and rescan it."
-#TODO: Add check if the target can be scanned. Check that scsi_level is above ??? Search for SCSI SPC-3. E.g. multipath and ALUA is defiend in SPC-3. This is defined in /sys/block/*/device/scsi_level
+    #TODO: Add check if the target can be scanned. Check that scsi_level is above ??? Search for SCSI SPC-3. E.g. multipath and ALUA is defiend in SPC-3. This is defined in /sys/block/*/device/scsi_level
     if [ "$(readlink -f /sys/block/$(basename $real_block_device)/device/driver)" = "/sys/bus/scsi/drivers/sd" -o \
           "$(readlink -f /sys/block/$(basename $real_block_device)/device/generic/driver)" = "/sys/bus/scsi/drivers/sd" ];then
         log DEBUG "\"$block_device\" is a SCSI device."
@@ -347,8 +347,8 @@ resize_fs(){  # Determine the filesystem and resize it
                 echo "swapon $fs_device    # Enable swap device."
                 ;;
         btrfs)
-        echo "btrfs filesystem resize max $mountpoint  # Resize BTRFS file system"
-        ;;
+                echo "btrfs filesystem resize max $mountpoint  # Resize BTRFS file system"
+                ;;
 
         *)
             log ERROR "File system \"$fs_type\" from device \"$fs_device\" is not supported."

@@ -314,6 +314,7 @@ resize_fs(){  # Determine the filesystem and resize it
     local fs_device=$1
     local fs_type=$(blkid $fs_device|sed -r 's/.*TYPE="(.*)".*/\1/')
     local error_code=254
+    local mountpoint=$(grep $fs_device /proc/mounts |awk '{print $2}')
     log DEBUG "Resizing the file system on \"$fs_device\""
     if [ x"$fs_type" == "x" ];then
         log DEBUG "Getting the filesystem type from /proc/mounts"
@@ -345,6 +346,9 @@ resize_fs(){  # Determine the filesystem and resize it
                 echo "mkswap $fs_device    # set the swap area"
                 echo "swapon $fs_device    # Enable swap device."
                 ;;
+        btrfs)
+        echo "btrfs filesystem resize max $mountpoint  # Resize BTRFS file system"
+        ;;
 
         *)
             log ERROR "File system \"$fs_type\" from device \"$fs_device\" is not supported."

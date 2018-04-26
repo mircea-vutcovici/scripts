@@ -351,7 +351,7 @@ resize_fs(){  # Determine the filesystem and resize it
                 ;;
 
         *)
-            log ERROR "File system \"$fs_type\" from device \"$fs_device\" is not supported."
+                log ERROR "File system \"$fs_type\" from device \"$fs_device\" is not supported."
                 ;;
     esac
     return $error_code

@@ -170,7 +170,9 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
     fi
 
     log DEBUG "Check if \"$block_device\" aka \"$real_block_device\" device is a SCSI device and rescan it."
-    #TODO: Add check if the target can be scanned. Check that scsi_level is above ??? Search for SCSI SPC-3. E.g. multipath and ALUA is defiend in SPC-3. This is defined in /sys/block/*/device/scsi_level
+    #TODO: Add check if the target can be scanned.
+    # Check that scsi_level is above ??? Search for SCSI SPC-3. E.g. multipath and ALUA is described in T10 SCSI-3 specification SPC-3, section 5.8. http://www.csit-sun.pub.ro/~cpop/Documentatie_SMP/Standarde_magistrale/SCSI/spc3r17.pdf
+    # SCSI level can be found in /sys/block/*/device/scsi_level
     if [ "$(readlink -f /sys/block/$(basename $real_block_device)/device/driver)" = "/sys/bus/scsi/drivers/sd" -o \
           "$(readlink -f /sys/block/$(basename $real_block_device)/device/generic/driver)" = "/sys/bus/scsi/drivers/sd" ];then
         log DEBUG "\"$block_device\" is a SCSI device."
@@ -410,6 +412,9 @@ if [ $DEBUG == 1 ];then
     #udevadm info --export-db
     #file -s /dev/sdaa # Returns UUID
     #sg_inq --id /dev/sdaa|sed -rn 's/.*[[]0x([0-9a-f]{32})[]].*/\1/p'  # Returns WWID used to group devices in a DM Multipath
+    # https://blogs.it.ox.ac.uk/oxcloud/2013/03/25/rescanning-your-scsi-bus-to-see-new-storage/
+    # scsi_logging_level –hlqueue 3 –highlevel 2 –all 1 -s
+    # echo 12345123123123 > /proc/sys/dev/scsi/logging_level
 fi
 
 expand_block_device $block_device_to_expand #|| die Could not expand \"$block_device_to_expand\" block device.

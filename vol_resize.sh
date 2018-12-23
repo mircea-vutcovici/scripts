@@ -354,6 +354,9 @@ resize_fs(){  # Determine the filesystem and resize it
                 echo "swapon $fs_device    # Enable swap device."
                 ;;
         btrfs)
+                if [ $(echo "$mountpoints"|wc -l) -gt 1 ];then
+                    log WARNING "Multiple btrfs file systems detected. You should chose only one. Block: $fs_device, Filesystems: ${mountpoints/$'\n'/, }"
+                fi
                 echo "$mountpoints"|while read mountpoint;do
                     echo "btrfs filesystem resize max \"$mountpoint\"  # Resize BTRFS file system mounted on $mountpoint"
                 done

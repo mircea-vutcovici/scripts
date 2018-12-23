@@ -209,7 +209,7 @@ rescan_block_device(){
     local block_device_rescan_file=$(readlink -f /sys/block/$block_device_short/device/rescan)
     log DEBUG "Rescan file: $block_device --> $block_device_rescan_file"
     # Print the following warning only once
-    if [ "x$rescan_block_device_warning" == "x" ];then
+    if [ -z ${rescan_block_device_warning+x} ];then
          rescan_block_device_warning="displayed"
         log WARNING "Make sure you run next \"echo\" commands all at once, if there are more than 1. If the \"echo\" commands are not run in a short timpespan, the DM multipath devices will go into suspended state. If the multipath volume is frozen, resume disk I/O with: dmsetup resume /dev/mapper/mpath...."
     fi

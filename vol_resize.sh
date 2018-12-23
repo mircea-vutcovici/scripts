@@ -319,7 +319,7 @@ expand_crypt_device(){
 }
 resize_fs(){  # Determine the filesystem and resize it
     local fs_device=$1
-    local fs_type=$(blkid $fs_device|sed -r 's/.*TYPE="(.*)".*/\1/')
+    local fs_type=$(blkid $fs_device|sed -r 's/.*TYPE="([^"]*)".*/\1/')
     local error_code=254
     local mountpoint=$(grep $fs_device /proc/mounts |awk '{print $2}')
     log DEBUG "Resizing the file system on \"$fs_device\""

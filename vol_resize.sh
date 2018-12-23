@@ -302,7 +302,7 @@ expand_lvm2_pv(){
 expand_mp_device(){
     local mp_device=$1
     log DEBUG "Expanding multipath volume \"$mp_device\"."
-    echo "multipathd -k\"resize map $(basename $mp_device)\"   # Expan DM Multipath (MPIO) device"
+    echo "multipathd -k\"resize map $(basename $mp_device)\"   # Expand DM Multipath (MPIO) device"
     return $?
 }
 expand_crypt_device(){
@@ -349,7 +349,7 @@ resize_fs(){  # Determine the filesystem and resize it
                 error_code=$?
                 ;;
         swap)
-                echo "swapoff $fs_device    # Disable swap device. Make sure you have enough free memory to accomodate the data from this swap device."
+                echo "swapoff $fs_device    # Disable swap device. Make sure you have enough free memory to load the data from this swap device."
                 echo "mkswap $fs_device    # set the swap area"
                 echo "swapon $fs_device    # Enable swap device."
                 ;;

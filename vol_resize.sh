@@ -259,7 +259,8 @@ update_disklabel(){
         expand_lvm2_pv $block_device
         return $?
     fi
-    log DEBUG "Could not determine the disk label for \"$block_device\"."
+    # FIXME: This message is misleading
+    #log DEBUG "Could not determine the disk label for \"$block_device\"."
     return 0
 }
 

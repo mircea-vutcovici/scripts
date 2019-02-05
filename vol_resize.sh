@@ -186,6 +186,14 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
         return $?
     fi
 
+    log DEBUG "Check if \"$block_device\" aka \"$real_block_device\" device is a Virtio block device."
+    if [ "$(readlink -f /sys/block/$(basename $real_block_device)/device/driver)" = "/sys/bus/virtio/drivers/virtio_blk" -o \
+          "$(readlink -f /sys/block/$(basename $real_block_device)/device/generic/driver)" = "/sys/bus/virtio/drivers/virtio_blk" ];then
+        log DEBUG "\"$block_device\" is a Virtio block device."
+        update_disklabel $block_device
+        return $?
+    fi
+
     log DEBUG "Check if \"$block_device\" aka \"$real_block_device\" device is DM multipath."
     if dmsetup table|grep -q $(basename $block_device).*multipath; then
         log DEBUG "The \"$real_block_device\" device aka \"$block_device\" is a DM multipath volume."

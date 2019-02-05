@@ -165,7 +165,7 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
             return $?
         fi
         log DEBUG "Check if \"$block_device\" is an MS-DOS partition."
-        if fdisk -l $disk_device|grep -q "^Disklabel type: dos$";then
+        if fdisk -l $disk_device|grep -q "^Disk.*label type: dos$";then
             # Is bootable: dd if=/dev/sda bs=1 count=2 skip=510 2>/dev/null|hexdump -e '/1 "%02X "'
             #    returns: 55 AA
             log DEBUG "The block device \"$block_device\" is a MS-DOS partition."

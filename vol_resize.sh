@@ -157,16 +157,22 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
     log DEBUG "Check if \"$block_device\" is a MS-DOS or UEFI GPT partition."
     if [[ $(< /sys/class/block/$(basename $block_device)/partition) -ge 1 ]] 2>/dev/null;then
         log DEBUG "The block device \"$block_device\" is a MS-DOS or UEFI GPT partition."
-    log DEBUG "Check if \"$block_device\" is an UEFI GPT partition."
+        log DEBUG "Check if \"$block_device\" is an UEFI GPT partition."
         local disk_device=/dev/$(basename $(dirname $(readlink -f /sys/class/block/$(basename $block_device))))
         if dd if=$disk_device bs=512 count=1 skip=1 2>/dev/null|grep -q "^EFI PART";then
             log DEBUG "The block device \"$block_device\" is an UEFI GPT partition."
             expand_gpt_partition $block_device && update_disklabel $block_device
-        else
+            return $?
+        fi
+        log DEBUG "Check if \"$block_device\" is an MS-DOS partition."
+        if fdisk -l $disk_device|grep -q "^Disklabel type: dos$";then
+            # Is bootable: dd if=/dev/sda bs=1 count=2 skip=510 2>/dev/null|hexdump -e '/1 "%02X "'
+            #    returns: 55 AA
             log DEBUG "The block device \"$block_device\" is a MS-DOS partition."
             expand_msdos_partition $block_device && update_disklabel $block_device
+            return $?
         fi
-        return $?
+        die "The disk label of the \"$block_device\" device could not be if it is MS-DOS or UEFI GPT."
     fi
 
     log DEBUG "Check if \"$block_device\" aka \"$real_block_device\" device is a SCSI device and rescan it."

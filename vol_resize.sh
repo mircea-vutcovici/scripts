@@ -190,6 +190,13 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
     if [ "$(readlink -f /sys/block/$(basename $real_block_device)/device/driver)" = "/sys/bus/virtio/drivers/virtio_blk" -o \
           "$(readlink -f /sys/block/$(basename $real_block_device)/device/generic/driver)" = "/sys/bus/virtio/drivers/virtio_blk" ];then
         # TODO: add commands for qemu/libvirtd to resize the block device
+        #    Find the block device name in qemu:
+        #        virsh domblklist <libvirtd_vm_name>
+        #        virsh qemu-monitor-command <libvirtd_vm_name> info block --hmp
+        #    Pay attention for the disk name, should be similar to "drive-virtio-disk0".
+        #    Resize the disk:
+        #        virsh blockresize --domain <libvirtd_vm_name> --path drive-virtio-disk0 --size 20G
+        #        virsh qemu-monitor-command <libvirtd_vm_name> block_resize drive-virtio-disk0 20G --hmp
         log DEBUG "\"$block_device\" is a Virtio block device."
         update_disklabel $block_device
         return $?

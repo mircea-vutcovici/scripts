@@ -189,6 +189,7 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
     log DEBUG "Check if \"$block_device\" aka \"$real_block_device\" device is a Virtio block device."
     if [ "$(readlink -f /sys/block/$(basename $real_block_device)/device/driver)" = "/sys/bus/virtio/drivers/virtio_blk" -o \
           "$(readlink -f /sys/block/$(basename $real_block_device)/device/generic/driver)" = "/sys/bus/virtio/drivers/virtio_blk" ];then
+        # TODO: add commands for qemu/libvirtd to resize the block device
         log DEBUG "\"$block_device\" is a Virtio block device."
         update_disklabel $block_device
         return $?

@@ -441,6 +441,7 @@ done
 # http://rescan-scsi-bus.sh/ latest ftp://31.3.72.196/gentoo/distfiles/rescan-scsi-bus.sh-1.57
 
 if [ $DEBUG == 1 ];then
+    #ssm list
     #dmsetup ls --tree; multipath -ll; lvs; vgs; pvs; echo
     print_dm_tree $block_device_to_expand_short
     #dmsetup deps testvg-testlv

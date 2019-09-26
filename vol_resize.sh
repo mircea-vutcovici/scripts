@@ -281,7 +281,7 @@ expand_gpt_partition(){
     expand_block_device $gpt_disk_device
     local gpt_part_number=$(< /sys/class/block/$(basename $gpt_part_device)/partition)
     # TODO: if parted doesn't support resize, then try with:
-    # echo ", +" | sfdisk -N 2 /dev/vda --no-reread
+    # echo ", +" | sgdisk -N 2 /dev/vda --no-reread
     echo "parted -s $gpt_disk_device resizepart $gpt_part_number   # Resize GPT partition $gpt_part_device"
     echo "# Update kernel with new partition table from disk"
     echo "partx -u $gpt_disk_device"

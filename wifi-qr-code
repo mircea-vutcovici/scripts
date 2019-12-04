@@ -1,0 +1,30 @@
+#! /bin/bash
+# Reset the password if it wasn't changed in the last 90 days.
+change_wifi_password_days=90
+# IP or hostname of the router
+router_address=minimot
+# The interface index can be found by running: for i in 1 2 3 4;do echo Index=$i; { echo uci show wireless.@wifi-iface[$i].device;echo uci show wireless.@wifi-iface[$i].ssid ;}|ssh minimot |&grep ^wireless;echo;done
+wifi_interface_index=2
+
+reset_wifi_password(){
+    local wifi_new_pass=$(openssl rand -base64 10)
+    ssh $router_address "uci set wireless.@wifi-iface[$wifi_interface_index].key=$wifi_new_pass; uci commit wireless; wifi reload"
+}
+
+#wifi_password=$(ssh $router_address cat /etc/config/wireless|awk 'BEGIN{RS="";FS="'\''"}/MiniMotGuest/{if(match($0,/key '\''(.*)'\''/,m)) print m[1]}')
+
+# Reset the password if it is older than $change_wifi_password_days days
+if [[ $(ssh $router_address find /etc/config/wireless -mtime +$change_wifi_password_days |wc -l) -ne 0 ]];then
+    echo Regenerating the password
+    reset_wifi_password
+fi
+
+# Obtain WiFi credentials from route config
+wifi_password=$(ssh $router_address uci show wireless.@wifi-iface[$wifi_interface_index].key|sed -r "s/.*'(.*)'/\1/")
+wifi_ssid=$(ssh $router_address uci show wireless.@wifi-iface[$wifi_interface_index].ssid|sed -r "s/.*'(.*)'/\1/")
+
+# Show QR barcode with WiFi credentials
+echo SSID: $wifi_ssid
+echo Password: $wifi_password
+qrencode -t UTF8 -o - -m2 -l L "WIFI:S:$wifi_ssid;T:WPA;P:$wifi_password;;"
+# vim:et:sw=4:ts=4:sts=4:

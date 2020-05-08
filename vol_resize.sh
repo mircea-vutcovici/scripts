@@ -38,7 +38,7 @@ log(){
             esac
             log_color_reset="\e[0m"
         fi
-        echo -e $(date +%F\ %T) $log_color$log_message_level$log_color_reset: "$log_message" >&2
+        printf '%(%F %T)T %b\n' -1 "$log_color$log_message_level$log_color_reset: $log_message" >&2
     fi
     case $log_message_level in
         ERROR|FATAL) ERRORS_FOUND=1 # We will send an email with the log in the exit_trap function.

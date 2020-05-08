@@ -59,8 +59,8 @@ run(){
     else
         log DEBUG "Starting \"$shell_expression\""
         local pipefail_save=$(set +o |grep pipefail)  # save the current status of pipefail bash option.
-	# TODO: Disable buffering with: stdbuf -oL
-	eval "set -o pipefail && $shell_expression" |&  while IFS= read -r line; do log DEBUG "    | $line"; done
+        # TODO: Disable buffering with: stdbuf -oL
+        eval "set -o pipefail && $shell_expression" |&  while IFS= read -r line; do log DEBUG "    | $line"; done
         local error_code=$?
         eval $pipefail_save  # restore the status of pipefail bash option, we need to restore it after the $shell_expression has run otherwise the exit code will be always 0.
         log DEBUG "The command \""$shell_expression"\" ended with error code $error_code"

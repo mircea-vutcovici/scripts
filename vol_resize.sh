@@ -400,7 +400,7 @@ resize_fs(){  # Determine the filesystem and resize it
 
 # {{{ Validate input
 if [  $# -lt 1 ];then
-    die Invalid number of arguments. "\$#=$#"
+    die "Invalid number of arguments. \$#=$#"
 fi
 
 if [[ $(id -ru) != 0 ]];then

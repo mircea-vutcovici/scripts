@@ -369,7 +369,8 @@ expand_raw_file(){
     local loop_backing_file=$1
     log DEBUG "Expand raw file \"$loop_backing_file\""
     echo "dd conv=notrunc oflag=append bs=1M count=1 if=/dev/zero of=$loop_backing_file   # Append 1MB NULL characters to the file"
-    #echo "fallocate --posix --length 2G $loop_backing_file"
+    #echo "fallocate --posix --length 2G $loop_backing_file   # Append 1MB NULL characters to the file"
+    #echo "truncate -s +1M $loop_backing_file   # Append 1MB NULL characters to the file"
 }
 resize_fs(){  # Determine the filesystem and resize it
     local fs_device=$1

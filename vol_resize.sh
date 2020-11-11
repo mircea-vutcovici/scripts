@@ -112,7 +112,6 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
     local maj_min="0:0"
     local minor=0
     local major=0
-    local block_device_to_scan=""
     local real_block_device=$block_device
     local error_code=254
     if [ -L $block_device ];then

@@ -362,13 +362,13 @@ expand_loop_device(){
     local loop_backing_file=$(</sys/block/$(basename $real_block_device)/loop/backing_file)
     expand_block_device $loop_backing_file
     log DEBUG "Expand loop device \"$loop_device\""
-    echo "losetup --set-capacity $loop_device"
+    echo "losetup --set-capacity $loop_device   # Resize loop block device"
     return $?
 }
 expand_raw_file(){
     local loop_backing_file=$1
     log DEBUG "Expand raw file \"$loop_backing_file\""
-    echo "dd conv=notrunc oflag=append bs=1M count=1 if=/dev/zero of=$loop_backing_file"
+    echo "dd conv=notrunc oflag=append bs=1M count=1 if=/dev/zero of=$loop_backing_file   # Append 1MB NULL characters to the file"
     #echo "fallocate --posix --length 2G $loop_backing_file"
 }
 resize_fs(){  # Determine the filesystem and resize it

@@ -223,6 +223,19 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
         expand_lvm2_lv $block_device
         return $?
     fi
+    log DEBUG "Check if \"$block_device\" aka \"$real_block_device\" device is a loop volume."
+    if [ -f /sys/block/$(basename $real_block_device)/loop/backing_file ];then
+        local loop_backing_file=$(</sys/block/$(basename $real_block_device)/loop/backing_file)
+        log DEBUG "The \"$real_block_device\" device aka \"$block_device\" is a loop volume mapped from \"$loop_backing_file\"."
+        expand_loop_device $block_device
+        return $?
+    fi
+    log DEBUG "Check if \"$block_device\" aka \"$real_block_device\" is a file."
+    if [ -f $block_device ];then
+        log DEBUG "The \"$real_block_device\" device aka \"$block_device\" is a file."
+        expand_raw_file $loop_backing_file
+        return $?
+    fi
     die "The type of the \"$block_device\" device could not be determined."
 }
 rescan_block_device(){
@@ -344,6 +357,20 @@ expand_crypt_device(){
         log ERROR "Can not resize crypt device $crypt_device. It is not a LUKS volume."
     fi
     return $?
+}
+expand_loop_device(){
+    local loop_device=$1
+    local loop_backing_file=$(</sys/block/$(basename $real_block_device)/loop/backing_file)
+    expand_block_device $loop_backing_file
+    log DEBUG "Expand loop device \"$loop_device\""
+    echo "losetup --set-capacity $loop_device"
+    return $?
+}
+expand_raw_file(){
+    local loop_backing_file=$1
+    log DEBUG "Expand raw file \"$loop_backing_file\""
+    echo "dd conv=notrunc oflag=append bs=1M count=1 if=/dev/zero of=$loop_backing_file"
+    #echo "fallocate --posix --length 2G $loop_backing_file"
 }
 resize_fs(){  # Determine the filesystem and resize it
     local fs_device=$1

@@ -29,14 +29,14 @@ log(){
     if [[ $DEBUG == "1" || $log_message_level != "DEBUG" ]];then
         if [ -t 1 -a -t 2 ] ; then  # STDOUT is a terminal
             case $log_message_level in
-                DEBUG)  log_color="\e[1;34m" ;; # light blue
-                INFO)   log_color="\e[1;32m" ;;  # light green
-                WARNING)log_color="\e[33m" ;; # yellow
-                ERROR)  log_color="\e[1;31m" ;; # light red
-                FATAL)  log_color="\e[31m" ;; # red
-                *)      log_color="\e[5;31m";; # blinking red
+                DEBUG)  log_color=$(tput setaf 4; tput bold) ;; # light blue
+                INFO)   log_color=$(tput setaf 2; tput bold) ;;  # light green
+                WARNING)log_color=$(tput setaf 3; tput bold) ;; # yellow
+                ERROR)  log_color=$(tput setaf 1; tput bold) ;; # light red
+                FATAL)  log_color=$(tput setaf 1) ;; # red
+                *)      log_color=$(tput setaf 1; tput blink);; # blinking red
             esac
-            log_color_reset="\e[0m"
+            log_color_reset=$(tput sgr0) # turn off all attributes
         fi
         printf '%(%F %T)T %b\n' -1 "$log_color$log_message_level$log_color_reset: $log_message" >&2
     fi

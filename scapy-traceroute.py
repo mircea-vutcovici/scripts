@@ -24,3 +24,8 @@ while 1:
     except TypeError as ex:
         print(ttl, '-> timeout')
         ttl += 1
+    except IndexError as ex:
+        print(ttl, '-> IndexError', ex)
+        print(p.summary())
+        #print(p.display())
+        break

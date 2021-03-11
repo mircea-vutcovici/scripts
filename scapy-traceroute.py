@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/python3
 import sys
 import os
 from scapy.all import sr1,IP,TCP,ICMP,UDP
@@ -16,11 +16,11 @@ while 1:
     # if time exceeded due to TTL exceeded
     try:
         if p[ICMP].type == 11 and p[ICMP].code == 0:
-            print ttl, '->', p.src
+            print(ttl, '->', p.src)
             ttl += 1
         elif p[ICMP].type == 0:
-            print ttl, '->', p.src
+            print(ttl, '->', p.src)
             break
     except TypeError as ex:
-        print ttl, '-> timeout'
+        print(ttl, '-> timeout')
         ttl += 1

@@ -22,6 +22,7 @@ while True:
             ttl += 1
         elif p[ICMP].type == 0:
             print(ttl, '->', p.src)
+            print(p.summary())
             break
     except TypeError as ex:
         print(ttl, '-> timeout')

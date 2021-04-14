@@ -210,7 +210,7 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
     fi
 
     log DEBUG "Check if \"$block_device\" aka \"$real_block_device\" device is DM crypt."
-    if dmsetup table|grep -q $(basename $block_device).*crypt; then
+    if cryptsetup status $real_block_device |& egrep -q "type:[[:space:]]+LUKS"; then
         log DEBUG "The \"$real_block_device\" device aka \"$block_device\" is a DM crypt volume."
         expand_crypt_device $block_device && update_disklabel $block_device
         return $?
@@ -347,7 +347,9 @@ expand_mp_device(){
 }
 expand_crypt_device(){
     local crypt_device=$1
-    local crypt_device_parent=/dev/$(lsblk --inverse --list --noheadings --output=name $crypt_device|sed -n '2p')
+    log DEBUG crypt_device=$crypt_device
+    run cryptsetup status $crypt_device
+    local crypt_device_parent=$(cryptsetup status $(basename $crypt_device)|sed -rn 's/^[[:space:]]+device:[[:space:]]+//p')
     log DEBUG "Check if $crypt_device_parent, parent of $crypt_device device, is a LUKS device."
     if cryptsetup isLuks $crypt_device_parent;then
         log DEBUG "The \"$crypt_device_parent\" device contains a LUKS encrypted volume."

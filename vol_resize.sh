@@ -456,7 +456,9 @@ while [[ $# > 0 ]]; do
                         block_device_to_expand=$1
                         block_device_to_expand_short=$(basename $block_device_to_expand)
                         ls -ld --dereference $block_device_to_expand |grep -q ^b || die \"$block_device_to_expand\" is not a block device.
-                        df $block_device_to_expand >/dev/null || log ERROR "\"$block_device_to_expand\" is not mounted."
+                        if ! grep -q "^$block_device_to_expand" /proc/mounts;then
+                            log ERROR "\"$block_device_to_expand\" is not mounted."
+                        fi
                         shift
                         ;;
         *) die Unknown command line option \"$argument\";;

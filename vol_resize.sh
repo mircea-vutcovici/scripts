@@ -186,6 +186,13 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
         return $?
     fi
 
+    log DEBUG "Check if \"$block_device\" aka \"$real_block_device\" device is a NVME device and rescan it."
+    if ls -ld /sys/block/$(basename $real_block_device)/device/subsystem |& grep -q nvme ;then
+        log DEBUG "\"$block_device\" is a NVME device."
+        rescan_nvme_block_device $block_device && update_disklabel $block_device || die Could not generate rescan or update disklabel commands.
+        return $?
+    fi
+
     log DEBUG "Check if \"$block_device\" aka \"$real_block_device\" device is a Virtio block device."
     if [ "$(readlink -f /sys/block/$(basename $real_block_device)/device/driver)" = "/sys/bus/virtio/drivers/virtio_blk" -o \
           "$(readlink -f /sys/block/$(basename $real_block_device)/device/generic/driver)" = "/sys/bus/virtio/drivers/virtio_blk" ];then
@@ -254,6 +261,14 @@ rescan_block_device(){
     fi
     echo "echo 1 > $block_device_rescan_file   # Send SCSI IDENTIFY_DRIVE command to obtain the new size"
     return 0
+}
+
+rescan_nvme_block_device(){
+    # TODO: Do we need also "reset_controller", not only "rescan_controller"?
+    local block_device=$1   # Full path to the device name
+    local block_device_short=$(basename $block_device)   # This is the NVME namespace, like: nvme0n1
+    local block_device_rescan_file=$(readlink -f /sys/block/$block_device_short/device/rescan_controller)
+    echo "echo 1 > $block_device_rescan_file       # Rescan NVME controller. This will also find and create device files for new NVME namespaces."
 }
 
 update_disklabel(){

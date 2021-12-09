@@ -1,0 +1,3 @@
+# /etc/udev/rules.d/50-mvutcovici-battery.rules
+KERNEL=="BAT0", SUBSYSTEM=="power_supply", ATTR{charge_control_end_threshold}="80"
+KERNEL=="BAT0", SUBSYSTEM=="power_supply", ATTR{charge_control_start_threshold}="60"

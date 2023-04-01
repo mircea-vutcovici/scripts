@@ -255,7 +255,7 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
 rescan_block_device(){
     local block_device=$1   # Full path to the device name
     local block_device_short=$(basename $block_device)
-    # SCSI IDENTIFY_DRIVE
+    # SCSI Read Capacity(16) or Read Capacity(10)
     local block_device_rescan_file=$(readlink -f /sys/block/$block_device_short/device/rescan)
     log DEBUG "Rescan file: $block_device --> $block_device_rescan_file"
     if [ "x$block_device_rescan_file" == "x" ];then
@@ -267,7 +267,7 @@ rescan_block_device(){
          rescan_block_device_warning="displayed"
         log WARNING "Make sure you run next \"echo\" commands all at once, if there are more than 1. If the \"echo\" commands are not run in a short timpespan, the DM multipath devices will go into suspended state. If the multipath volume is frozen, resume disk I/O with: dmsetup resume /dev/mapper/mpath...."
     fi
-    echo "echo 1 > $block_device_rescan_file   # Send SCSI IDENTIFY_DRIVE command to obtain the new size"
+    echo "echo 1 > $block_device_rescan_file   # Send SCSI Read Capacity(16) or Read Capacity(10) command to obtain the new size"
     return 0
 }
 

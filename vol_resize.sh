@@ -302,6 +302,12 @@ update_disklabel(){
 
 expand_gpt_partition(){
     local gpt_part_device=$1
+    if [[ $(< /sys/class/block/$(basename $gpt_part_device)/partition) -ge 1 ]] 2>/dev/null;then
+    log DEBUG "The block device $gpt_part_device is partition $(< /sys/class/block/$(basename $gpt_part_device)/partition )."
+    else
+        die "The block device $gpt_part_device is not a UEFI GPT partition"
+    fi
+    # Find the main block device where this partion is member
     local gpt_disk_device=/dev/$(basename $(dirname $(readlink -f /sys/class/block/$(basename $gpt_part_device))))
     local gpt_part_table_backup_name=dev_$(basename $gpt_disk_device)-'partition-table-$(date +%F_%H%M%S).txt'
     echo "sgdisk --backup=$gpt_part_table_backup_name $gpt_disk_device # Backup UEFI GPT partition table"

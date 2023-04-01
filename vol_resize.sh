@@ -186,7 +186,7 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
         #   include/scsi/scsi.h:#define SCSI_SPC_3      6
         local SCSI_SPC_3=6
         if [[ $(< /sys/block/$(basename $block_device)/device/scsi_level) -ge $SCSI_SPC_3 ]];then
-            log DEBUG"\"$block_device\" can be resized online."
+            log DEBUG "\"$block_device\" can be resized online."
         else
             log WARNING "\"$block_device\" can not be resized online, the hardware SCSI level is lower than 6 (SCSI_SPC_3), and the machine must be rebooted. $(< /sys/block/$(basename $block_device)/device/scsi_level) < $SCSI_SPC_3"
         fi

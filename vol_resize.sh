@@ -176,12 +176,20 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
     fi
 
     log DEBUG "Check if \"$block_device\" aka \"$real_block_device\" device is a SCSI device and rescan it."
-    #TODO: Add check if the target can be scanned.
-    # Check that scsi_level is above ??? Search for SCSI SPC-3. E.g. multipath and ALUA is described in T10 SCSI-3 specification SPC-3, section 5.8. http://www.csit-sun.pub.ro/~cpop/Documentatie_SMP/Standarde_magistrale/SCSI/spc3r17.pdf
-    # SCSI level can be found in /sys/block/*/device/scsi_level
     if [ "$(readlink -f /sys/block/$(basename $real_block_device)/device/driver)" = "/sys/bus/scsi/drivers/sd" -o \
           "$(readlink -f /sys/block/$(basename $real_block_device)/device/generic/driver)" = "/sys/bus/scsi/drivers/sd" ];then
         log DEBUG "\"$block_device\" is a SCSI device."
+        # Check if the SCSI target can be resized.
+        # Check that scsi_level is equal or above 6
+        # The support for resize was defined in SCSI SPC-3. Also multipath and ALUA is described in T10 SCSI-3 specification SPC-3, section 5.8. http://www.csit-sun.pub.ro/~cpop/Documentatie_SMP/Standarde_magistrale/SCSI/spc3r17.pdf
+        # From Linux kernel:
+        #   include/scsi/scsi.h:#define SCSI_SPC_3      6
+        local SCSI_SPC_3=6
+        if [[ $(< /sys/block/$block_device/device/scsi_level) -ge $SCSI_SPC_3 ]];then
+            log DEBUG"\"$block_device\" can be resized online."
+        else
+            log WARNING "\"$block_device\" can not be resized online, the hardware SCSI level is lower than 6 (SCSI_SPC_3), and the machine must be rebooted. $(< /sys/block/$block_device/device/scsi_level) < $SCSI_SPC_3"
+        fi
         rescan_block_device $block_device && update_disklabel $block_device
         return $?
     fi

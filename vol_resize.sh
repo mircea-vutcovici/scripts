@@ -233,7 +233,7 @@ expand_block_device(){ # Recursively call itself and resize each device (block, 
     fi
 
     log DEBUG "Check if \"$block_device\" aka \"$real_block_device\" device is DM crypt."
-    if cryptsetup status $real_block_device |& egrep -q "type:[[:space:]]+LUKS"; then
+    if cryptsetup status $real_block_device |& grep -Eq "type:[[:space:]]+LUKS"; then
         log DEBUG "The \"$real_block_device\" device aka \"$block_device\" is a DM crypt volume."
         expand_crypt_device $block_device && update_disklabel $block_device
         return $?
@@ -420,7 +420,7 @@ resize_fs(){  # Determine the filesystem and resize it
     if [ x"$fs_type" == "x" ];then
         log DEBUG "Getting the filesystem type from /proc/mounts"
         # GFS can be expanded only if it is mounted
-        if egrep -q "^$fs_device [^ ]+ gfs " /proc/mounts ;then
+        if grep -Eq "^$fs_device [^ ]+ gfs " /proc/mounts ;then
             fs_type=gfs
         fi
     fi

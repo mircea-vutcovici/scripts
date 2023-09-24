@@ -1,17 +1,27 @@
 # Update package list from OpenWRT repositories
+```sh
 opkg update
+```
 
 # Install USB Attached SCSI kernel module
+```sh
 opkg install kmod-usb-storage-uas        # This will install kmod-usb-storage, too
+```
 
 # Load the UAS driver (kernel module)
+```sh
 modprobe uas
+```
 
 # List SCSI volumes
+```sh
 grep sd /proc/partitions
+```
 
 # Show a HEX dump of the beginning of the disk:
+```sh
 hexdump -C /dev/sda|less|head -30
+```
 
 
 # fstab management
@@ -35,13 +45,17 @@ service fstab boot
 
 
 # Install NTFS drivers:
+```sh
 #opkg install ntfs-3g-utils
+```
 
 # Install btrfs utils and kernel module
+```sh
 opkg install btrfs-progs
+```
 
 # Format btrfs volume
-mkfs.btrfs -L Calin /dev/dm-0
+```sh
 root@MiniMot:~# mkfs.btrfs -L Calin /dev/dm-0
 btrfs-progs v6.0.1
 See http://btrfs.wiki.kernel.org for more information.
@@ -72,37 +86,50 @@ Devices:
     1     3.64TiB  /dev/dm-0
 
 root@MiniMot:~#
+```
 
 # Create the mountpoint:
+```sh
 mkdir /mnt/dm-0
+```
 
 # Mount the btrfs partition:
+```sh
 mount -o compress=zstd /dev/dm-0 /mnt/dm-0/
+```
 
 # Install Samba:
+```sh
 opkg install luci-app-samba4
+```
 
 
 
 
-# Disk encryption - https://wiki.archlinux.org/title/Data-at-rest_encryption
+# Disk encryption
+[Disk encryption - ArchWiki](https://wiki.archlinux.org/title/Data-at-rest_encryption)
 ## Destroy all data on the disk
+```sh
 wipefs -a /dev/sda
+```
 
 ## Install cryptsetup and Kernel modules
+```sh
 opkg install kmod-crypto-ecb kmod-crypto-xts kmod-crypto-seqiv kmod-crypto-misc kmod-crypto-user cryptsetup
 modprobe crypto-ecb
 modprobe crypto-seqiv
 modprobe crypto-user
 modprobe crypto-xts
+```
 
 ## Create the GPT disklabel with one single partition of type "8308 Linux dm-crypt CA7D7CCB-63ED-4C53-861C-1742536059CC". The partition will cover the whole disk.
+```sh
 sgdisk --new=1:0:0 --typecode=1:8309 --print /dev/sda
+```
 
 ## Test encryption speed - to determine hardware acceleration support
-
-cryptsetup benchmark
-```
+### cryptsetup benchmark
+```sh
 root@MiniMot:~# cryptsetup benchmark
 # Tests are approximate using memory only (no storage IO).
 PBKDF2-sha1        32800 iterations per second for 256-bit key
@@ -153,8 +180,12 @@ argon2id      8 iterations, 1048576 memory, 4 parallel threads (CPUs) for 256-bi
 ```
 
 ## Create the LUKS partition
+```sh
 cryptsetup luksFormat /dev/sda1
+```
 
 ## Attach the encrypted block device
+```sh
 cryptsetup open /dev/sda1
+```
 

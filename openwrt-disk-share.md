@@ -55,7 +55,7 @@ opkg install btrfs-progs
 ```
 
 # Format btrfs volume
-```sh
+```
 root@MiniMot:~# mkfs.btrfs -L Calin /dev/dm-0
 btrfs-progs v6.0.1
 See http://btrfs.wiki.kernel.org for more information.
@@ -129,7 +129,7 @@ sgdisk --new=1:0:0 --typecode=1:8309 --print /dev/sda
 
 ## Test encryption speed - to determine hardware acceleration support
 ### cryptsetup benchmark
-```sh
+```
 root@MiniMot:~# cryptsetup benchmark
 # Tests are approximate using memory only (no storage IO).
 PBKDF2-sha1        32800 iterations per second for 256-bit key

@@ -386,7 +386,7 @@ expand_crypt_device(){
     local crypt_device=$1
     log DEBUG crypt_device=$crypt_device
     run cryptsetup status $crypt_device
-    local crypt_device_parent=$(cryptsetup status $(basename $crypt_device)|sed -rn 's/^[[:space:]]+device:[[:space:]]+//p')
+    local crypt_device_parent=$(cryptsetup status $crypt_device|sed -rn 's/^[[:space:]]+device:[[:space:]]+//p')
     log DEBUG "Check if $crypt_device_parent, parent of $crypt_device device, is a LUKS device."
     if cryptsetup isLuks $crypt_device_parent;then
         log DEBUG "The \"$crypt_device_parent\" device contains a LUKS encrypted volume."

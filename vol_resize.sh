@@ -59,9 +59,17 @@ run(){
     else
         log DEBUG "Starting \"$shell_expression\""
         local pipefail_save=$(set +o |grep pipefail)  # save the current status of pipefail bash option.
+        local error_code=123
+        local random_key=$RANDOM$RANDOM
+        local regex="errorcode-$random_key=([0-9]+)"
         # TODO: Disable buffering with: stdbuf -oL
-        eval "set -o pipefail && $shell_expression" |&  while IFS= read -r line; do log DEBUG "    | $line"; done
-        local error_code=$?
+        { eval "set -o pipefail && $shell_expression" ;echo errorcode-$random_key=$? ; }|&  while IFS= read -r line; do
+            if [[ $line =~ $regex ]];then
+                return ${BASH_REMATCH[1]}
+            fi
+            log DEBUG "    | $line"
+        done
+        error_code=$?
         eval $pipefail_save  # restore the status of pipefail bash option, we need to restore it after the $shell_expression has run otherwise the exit code will be always 0.
         log DEBUG "The command \""$shell_expression"\" ended with error code $error_code"
         return $error_code

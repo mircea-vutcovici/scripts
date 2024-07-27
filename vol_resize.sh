@@ -507,6 +507,7 @@ done
 # blkid - see if required.
 # dmsetup ls --tree -o ascii
 # lsblk - to determine if it is a disk partition or logical volume
+# lsblk -o NAME,VENDOR,MODEL,SERIAL,LABEL,UUID,ID,MAJ:MIN,PHY-SEC,LOG-SEC,RA,SIZE,RO,FSTYPE,MOUNTPOINT
 # http://rescan-scsi-bus.sh/ latest ftp://31.3.72.196/gentoo/distfiles/rescan-scsi-bus.sh-1.57
 
 if [ $DEBUG == 1 ];then
@@ -518,6 +519,7 @@ if [ $DEBUG == 1 ];then
     #udevadm info -an /dev/sda
     #udevadm info --export-db
     #file -s /dev/sdaa # Returns UUID
+    #systool -c fc_host -v
     #sg_inq --id /dev/sdaa|sed -rn 's/.*[[]0x([0-9a-f]{32})[]].*/\1/p'  # Returns WWID used to group devices in a DM Multipath
     # https://blogs.it.ox.ac.uk/oxcloud/2013/03/25/rescanning-your-scsi-bus-to-see-new-storage/
     # scsi_logging_level –hlqueue 3 –highlevel 2 –all 1 -s

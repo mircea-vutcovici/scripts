@@ -6,7 +6,7 @@ from lark import Lark, logger
 logger.setLevel(logging.WARN)
 
 grammar=r"""
-        start: _NL header _NL record+
+        start: _NL* header _NL record+
         header: /Linux .*/
 
         record: timestamp _NL cpustats _NL diskstats

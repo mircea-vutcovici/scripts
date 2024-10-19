@@ -1,5 +1,17 @@
-#read -p "PID=" pid
-pid=$1
+#! /usr/bin/bash
+# Parse command line options
+if [[ $# == 1 ]];then
+    case $1 in
+        # We ignore any options and throw an error message
+        -*) echo "Usage: $0 <PID>" >&2
+            echo "This programs shows the signal masks for a process"
+            exit 1 ;;
+    esac
+    pid=$1
+else
+    # If PID was missing in the command line, we ask for it
+    read -p "PID=" pid
+fi
 
 # Name of the item that had a signal mask in hex
 item_name=""

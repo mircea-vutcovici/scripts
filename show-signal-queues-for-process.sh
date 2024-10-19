@@ -33,7 +33,7 @@ cat /proc/$pid/status|grep -E '(Sig|Shd)(Pnd|Blk|Ign|Cgt)'|while read item_name 
             # We print the signal's name
             kill -l $i | tr '\n' ' '
         fi
-        # We remove the least significant bit from the mask:
+        # We remove the least significant bit from the mask
         item_bin_mask=${item_bin_mask::-1}
         # We continue with next signal number
         set $((i++))

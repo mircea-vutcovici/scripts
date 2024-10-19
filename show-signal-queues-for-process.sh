@@ -1,6 +1,6 @@
 #read -p "PID=" pid
 pid=$1
-cat /proc/$pid/status|egrep '(Sig|Shd)(Pnd|Blk|Ign|Cgt)'|while read name mask;do
+cat /proc/$pid/status|grep -E '(Sig|Shd)(Pnd|Blk|Ign|Cgt)'|while read name mask;do
     bin=$(echo "ibase=16; obase=2; ${mask^^*}"|bc)
     echo -n "$name $mask $bin "
     i=1

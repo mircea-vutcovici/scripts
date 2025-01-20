@@ -45,6 +45,23 @@ log(){
         dump_stack
     esac
 }
+print_bold(){
+    local command_to_print="$1"
+    local command_description="$2"
+    local command_color=""
+    local description_color=""
+    local command_color_reset=""
+        if [ -t 1 -a -t 2 ] ; then  # STDOUT is a terminal
+            command_color=$(tput bold) # bold
+            description_color=$(tput setaf 2; tput bold) # light green
+            command_color_reset=$(tput sgr0) # turn off all attributes
+        fi
+    if [[ "$command_description" == "" ]];then
+        printf '%b\n' "$command_color$command_to_print$command_color_reset"
+    else
+        printf '%b\n' "$command_color$command_to_print$command_color_reset \t# $description_color$command_description$command_color_reset"
+    fi
+}
 die(){
     local error_message="$@"
     log FATAL "$error_message Stack trace:"
@@ -275,7 +292,7 @@ rescan_block_device(){
          rescan_block_device_warning="displayed"
         log WARNING "Make sure you run next \"echo\" commands all at once, if there are more than 1. If the \"echo\" commands are not run in a short timpespan, the DM multipath devices will go into suspended state. If the multipath volume is frozen, resume disk I/O with: dmsetup resume /dev/mapper/mpath...."
     fi
-    echo "echo 1 > $block_device_rescan_file   # Send SCSI Read Capacity(16) or Read Capacity(10) command to obtain the new size"
+    print_bold "echo 1 > $block_device_rescan_file" "Send SCSI Read Capacity(16) or Read Capacity(10) command to obtain the new size"
     return 0
 }
 
@@ -284,7 +301,7 @@ rescan_nvme_block_device(){
     local block_device=$1   # Full path to the device name
     local block_device_short=$(basename $block_device)   # This is the NVME namespace, like: nvme0n1
     local block_device_rescan_file=$(readlink -f /sys/block/$block_device_short/device/rescan_controller)
-    echo "echo 1 > $block_device_rescan_file       # Rescan NVME controller. This will also find and create device files for new NVME namespaces."
+    print_bold "echo 1 > $block_device_rescan_file" "Rescan NVME controller. This will also find and create device files for new NVME namespaces."
 }
 
 update_disklabel(){
@@ -326,18 +343,18 @@ expand_gpt_partition(){
     # Find the main block device where this partion is member
     local gpt_disk_device=/dev/$(basename $(dirname $(readlink -f /sys/class/block/$(basename $gpt_part_device))))
     local gpt_part_table_backup_name=dev_$(basename $gpt_disk_device)-'partition-table-$(date +%F_%H%M%S).txt'
-    echo "sgdisk --backup=$gpt_part_table_backup_name $gpt_disk_device # Backup UEFI GPT partition table"
+    print_vold "sgdisk --backup=$gpt_part_table_backup_name $gpt_disk_device" "Backup UEFI GPT partition table"
     log DEBUG "going deeper."
     expand_block_device $gpt_disk_device
     local gpt_part_number=$(< /sys/class/block/$(basename $gpt_part_device)/partition)
     # TODO: if parted doesn't support resize, then try with:
     # echo ", +" | sgdisk -N 2 /dev/vda --no-reread
-    echo "parted -s $gpt_disk_device resizepart $gpt_part_number   # Resize GPT partition $gpt_part_device"
-    echo "# Update kernel with new partition table from disk"
-    echo "partx -u $gpt_disk_device"
-    echo "partprobe $gpt_disk_device"
-    echo "blockdev --rereadpt $gpt_disk_device"
-    echo "kpartx -u $gpt_disk_device"
+    print_bold "parted -s $gpt_disk_device resizepart $gpt_part_number" "Resize GPT partition $gpt_part_device"
+    log INFO "Update kernel with new partition table from disk"
+    print_bold "partx -u $gpt_disk_device"
+    print_bold "partprobe $gpt_disk_device"
+    print_bold "blockdev --rereadpt $gpt_disk_device"
+    print_bold "kpartx -u $gpt_disk_device"
     return $?
 }
 expand_msdos_partition(){
@@ -351,35 +368,35 @@ expand_msdos_partition(){
     local msdos_disk_device=/dev/$(basename $(dirname $(readlink -f /sys/class/block/$(basename $msdos_part_device))))
     log DEBUG "Backup partition table for device $msdos_part_device"
     local msdos_part_table_backup_name=dev_$(basename $msdos_disk_device)-'partition-table-$(date +%F_%H%M%S).txt'
-    echo "sfdisk -d $msdos_disk_device > $msdos_part_table_backup_name   # Backup MS-DOS partition table for $msdos_disk_device block device."
+    print_bold "sfdisk -d $msdos_disk_device > $msdos_part_table_backup_name" "Backup MS-DOS partition table for $msdos_disk_device block device."
     log DEBUG "going deeper."
     expand_block_device $msdos_disk_device
     local msdos_part_number=$(< /sys/class/block/$(basename $msdos_part_device)/partition)
     # TODO: if parted doesn't support resize, then try with:
     # echo ", +" | sfdisk -N 2 /dev/vda --no-reread
-    echo "parted -s $msdos_disk_device resizepart $msdos_part_number   # Resize MS-DOS partition $msdos_part_device"
-    echo "# Update kernel with new partition table from disk"
-    echo "partx -u $msdos_disk_device"
-    echo "partprobe $msdos_disk_device"
-    echo "blockdev --rereadpt $msdos_disk_device"
-    echo "kpartx -u $msdos_disk_device"
+    print_bold "parted -s $msdos_disk_device resizepart $msdos_part_number" "Resize MS-DOS partition $msdos_part_device"
+    log INFO "Update kernel with new partition table from disk"
+    print_bold "partx -u $msdos_disk_device"
+    print_bold "partprobe $msdos_disk_device"
+    print_bold "blockdev --rereadpt $msdos_disk_device"
+    print_bold "kpartx -u $msdos_disk_device"
     return $?
 }
 expand_lvm2_lv(){
     local lv_device=$1
-    echo "lvextend -l +90%FREE $lv_device  # Extend the logical volume to 90% of free space in volume group."
+    print_bold "lvextend -l +90%FREE $lv_device" "Extend the logical volume to 90% of free space in volume group."
     return $?
 }
 expand_lvm2_pv(){
     local pv_device=$1
     log DEBUG "Expanding physical volume \"$pv_device\"."
-    echo "pvresize $pv_device   # Expand LVM physical volume $pv_device"
+    print_bold "pvresize $pv_device" "Expand LVM physical volume $pv_device"
     return $?
 }
 expand_mp_device(){
     local mp_device=$1
     log DEBUG "Expanding multipath volume \"$mp_device\"."
-    echo "multipathd -k\"resize map $(basename $mp_device)\"   # Expand DM Multipath (MPIO) device"
+    print_bold "multipathd -k\"resize map $(basename $mp_device)\"" "Expand DM Multipath (MPIO) device"
     return $?
 }
 expand_crypt_device(){
@@ -390,7 +407,7 @@ expand_crypt_device(){
     log DEBUG "Check if $crypt_device_parent, parent of $crypt_device device, is a LUKS device."
     if cryptsetup isLuks $crypt_device_parent;then
         log DEBUG "The \"$crypt_device_parent\" device contains a LUKS encrypted volume."
-        echo "cryptsetup resize  $crypt_device_parent  # Resize LUKS encrypted volume $crypt_device"
+        print_bold "cryptsetup resize  $crypt_device_parent"  "Resize LUKS encrypted volume $crypt_device"
     else
         log ERROR "Can not resize crypt device $crypt_device. It is not a LUKS volume."
     fi
@@ -407,14 +424,13 @@ expand_loop_device(){
 expand_raw_file(){
     local loop_backing_file=$1
     log DEBUG "Expand raw file \"$loop_backing_file\""
-    echo "dd conv=notrunc oflag=append bs=1M count=1 if=/dev/zero of=$loop_backing_file   # Append 1MB NULL characters to the file"
-    #echo "fallocate --posix --length 2G $loop_backing_file   # Append 1MB NULL characters to the file"
-    #echo "truncate -s +1M $loop_backing_file   # Append 1MB NULL characters to the file"
+    print_bold "dd conv=notrunc oflag=append bs=1M count=1 if=/dev/zero of=$loop_backing_file" "Append 1MB NULL characters to the file"
+    #print_bold "fallocate --posix --length 2G $loop_backing_file" "Append 1MB NULL characters to the file"
+    #print_bold "truncate -s +1M $loop_backing_file" "Append 1MB NULL characters to the file"
 }
 resize_fs(){  # Determine the filesystem and resize it
     local fs_device=$1
     local fs_type=$(blkid $fs_device|sed -r 's/.*TYPE="([^"]*)".*/\1/')
-    local error_code=254
     local mountpoints="$(grep $fs_device /proc/mounts |awk '{print $2}')"
     log DEBUG "Resizing the file system on \"$fs_device\""
     if [ x"$fs_type" == "x" ];then
@@ -426,33 +442,31 @@ resize_fs(){  # Determine the filesystem and resize it
     fi
     case $fs_type in
         xfs)
-                echo "xfs_growfs $fs_device   # Resize XFS file system"
-                error_code=$?
+                print_bold "xfs_growfs $fs_device" "Resize XFS file system"
                 ;;
         ext*)
-                echo "resize2fs $fs_device    # Resize ext3 or ext4 filesystem"
-                error_code=$?
+                print_bold "resize2fs $fs_device" "Resize ext3 or ext4 filesystem"
                 ;;
         gfs)
                 if ! clustat -Q ;then
                     die "Cluster is not quorate."
                 fi
                 log WARNING "Make sure you run the rescan on all RHEL cluster members"
-                echo gfs_grow -T $fs_device
-                echo gfs_grow $fs_device
-                error_code=$?
+                print_bold gfs_grow -T $fs_device
+                print_bold gfs_grow $fs_device
                 ;;
         swap)
-                echo "swapoff $fs_device    # Disable swap device. Make sure you have enough free memory to load the data from this swap device."
-                echo "mkswap $fs_device    # set the swap area"
-                echo "swapon $fs_device    # Enable swap device."
+                log WARNING "Make sure you have enough free memory to load the data from this swap device when you run swapoff command."
+                print_bold "swapoff $fs_device" "Disable swap device."
+                print_bold "mkswap $fs_device" "Set the swap area."
+                print_bold "swapon $fs_device" "Enable swap device."
                 ;;
         btrfs)
                 if [ $(echo "$mountpoints"|wc -l) -gt 1 ];then
                     log WARNING "Multiple btrfs file systems detected. You should chose only one. Block: $fs_device, Filesystems: ${mountpoints/$'\n'/, }"
                 fi
                 echo "$mountpoints"|while read mountpoint;do
-                    echo "btrfs filesystem resize max \"$mountpoint\"  # Resize BTRFS file system mounted on $mountpoint"
+                    print_bold "btrfs filesystem resize max \"$mountpoint\"" "Resize BTRFS file system mounted on $mountpoint"
                 done
                 ;;
 
@@ -460,7 +474,6 @@ resize_fs(){  # Determine the filesystem and resize it
                 log ERROR "File system \"$fs_type\" from device \"$fs_device\" is not supported."
                 ;;
     esac
-    return $error_code
 }
 
 # }}}

@@ -188,4 +188,3 @@ cryptsetup luksFormat /dev/sda1
 ```sh
 cryptsetup open /dev/sda1
 ```
-
